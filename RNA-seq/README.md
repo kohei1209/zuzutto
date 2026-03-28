@@ -148,14 +148,19 @@ mkdir -p raw_data
 
 各ノートブック冒頭の **設定セル** で変更できます。
 
-| パラメータ | デフォルト | 説明 |
-|-----------|:---------:|------|
-| `THREADS` | 8 | 並列処理スレッド数 |
-| `LFC_THRESHOLD` | 1.0 | log2FoldChange の閾値 |
-| `PADJ_THRESHOLD` | 0.05 | 調整済 P 値の閾値 |
-| `GENOME_DIR` | reference/hg38/star_index | STAR インデックスのパス |
-| `GTF_FILE` | (GENCODE v44 パス) | GTF アノテーションファイル |
-| `DEG_TOOL` | "deseq2" | DEG ツール選択 ("deseq2" or "edger") |
+| パラメータ | ノートブック | デフォルト | 説明 |
+|-----------|:----------:|:---------:|------|
+| `THREADS` | 01, 02 | 8 | 並列処理スレッド数 |
+| `TRIM_QUALITY` | 01 | 20 | Trim Galore 品質スコア閾値 |
+| `TRIM_MIN_LENGTH` | 01 | 36 | Trim Galore 最小リード長 |
+| `GENOME_DIR` | 02 | reference/hg38/star_index | STAR インデックスのパス |
+| `GTF_FILE` | 02 | (GENCODE v44 パス) | GTF アノテーションファイル |
+| `SJDB_OVERHANG` | 02 | 149 | リード長 - 1（150bp リードの場合は 149） |
+| `STRANDEDNESS` | 02 | 0 | featureCounts の strandedness (0=unstranded) |
+| `LFC_THRESHOLD` | 03, 04 | 1.0 | log2FoldChange の閾値 |
+| `PADJ_THRESHOLD` | 03, 04 | 0.05 | 調整済 P 値の閾値 |
+| `MIN_COUNT_THRESHOLD` | 03 | 10 | 前フィルタリングの最小カウント数 |
+| `DEG_TOOL` | 03 | "deseq2" | DEG ツール選択 ("deseq2" or "edger") |
 
 ---
 
@@ -164,8 +169,7 @@ mkdir -p raw_data
 ```
 rnaseq_project/
 ├── README.md                        ← このファイル
-├── environment.yml                  ← conda 環境定義
-├── requirements.txt                 ← pip 追加パッケージ
+├── environment.yml                  ← conda 環境定義（全依存パッケージ）
 ├── sample_metadata_template.csv     ← テンプレート（コピーして編集）
 ├── sample_metadata.csv              ← ユーザーが編集
 │
@@ -184,6 +188,7 @@ rnaseq_project/
 │   ├── gencode.v44.primary_assembly.annotation.gtf
 │   └── star_index/                  ← STAR インデックス
 │
+├── logs/                            ← (自動生成) 実行ログ
 ├── trimmed/                         ← (自動生成) トリミング後 FASTQ
 ├── qc_reports/                      ← (自動生成) QC レポート
 ├── mapped/                          ← (自動生成) BAM ファイル
@@ -260,4 +265,4 @@ pip install --upgrade multiqc
 | Subread (featureCounts) | 2.0.6 | リードカウント |
 | DESeq2 | Bioconductor | DEG 解析 |
 | edgeR | Bioconductor | DEG 解析 |
-| Plotly | 5.18+ | インタラクティブ可視化 |
+| Plotly | 5.18.0 | インタラクティブ可視化 |
