@@ -45,3 +45,6 @@ dependencies:
   # pip追加パッケージ
   - pip:
     - kaleido==0.2.1
+    - gprofiler-official>=1.0.0
+    - gseapy>=1.1.0
+    - networkx>=3.2

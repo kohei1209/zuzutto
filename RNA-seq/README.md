@@ -1,7 +1,7 @@
 # RNA-seq 解析パイプライン (Jupyter Notebook版)
 
-FASTQ 生データから DEG（発現変動遺伝子）のインタラクティブ可視化までを  
-**4つの Jupyter Notebook** で実行する RNA-seq 解析パイプラインです。
+FASTQ 生データから DEG（発現変動遺伝子）のインタラクティブ可視化・機能解析までを
+**5つの Jupyter Notebook** で実行する RNA-seq 解析パイプラインです。
 
 ---
 
@@ -110,9 +110,33 @@ mkdir -p raw_data
 | 2 | `02_Mapping_and_Counting.ipynb` | Python | STAR → featureCounts | 1〜3時間 |
 | 3 | `03_DEG_Analysis.ipynb` | **R** | DESeq2 / edgeR | 5〜15分 |
 | 4 | `04_Visualization.ipynb` | Python | Volcano Plot, ヒートマップ | 1〜5分 |
+| 5 | `05_Functional_Analysis.ipynb` | Python | GO, GSEA, ネットワーク | 5〜15分 |
 
 > **重要**: ノートブック03は **Rカーネル (RNA-seq (R))** に切り替えてから実行してください。
-> ノートブック04は Python に戻してください。
+> ノートブック04以降は Python に戻してください。
+> ノートブック05はインターネット接続が必要です（g:Profiler API使用）。
+
+### RStudio代替スクリプト（Step 3）
+
+Jupyter NotebookのRカーネルが不安定な場合、**RStudio用のスタンドアロンスクリプト**を代替として使用できます。
+
+| ファイル | 説明 |
+|---------|------|
+| `03_DEG_Analysis.R` | `03_DEG_Analysis.ipynb` と同等の処理を行うRスクリプト |
+
+```bash
+# RStudioで実行する場合
+# 1. RStudio で 03_DEG_Analysis.R を開く
+# 2. 作業ディレクトリを RNA-seq/ フォルダに設定
+# 3. Source ボタンで実行
+
+# コマンドラインで実行する場合
+cd RNA-seq/
+Rscript 03_DEG_Analysis.R
+```
+
+> 入出力はノートブック版と完全に同じです。
+> 実行後、そのまま `04_Visualization.ipynb` に進めます。
 
 ---
 
@@ -142,6 +166,14 @@ mkdir -p raw_data
 - DEG 数バープロット
 - 出力: `results/volcano_plot_interactive.html`, `results/deg_heatmap_interactive.html`
 
+### 05_Functional_Analysis.ipynb
+- **GO/パスウェイエンリッチメント**: g:Profiler (GO:BP/MF/CC, Reactome, WikiPathways)
+- **Pre-ranked GSEA**: gseapy (Enrichr GO_Biological_Process_2023)
+- **エンリッチメントネットワーク**: Cytoscape風のterm-termネットワーク (networkx + Plotly)
+- **全条件エンリッチメントヒートマップ**: 条件間のパスウェイ変動比較
+- 全ツール商用利用可 (KEGG は除外)
+- 出力: `results/functional/` 配下に CSV + インタラクティブ HTML
+
 ---
 
 ## カスタマイズ可能なパラメータ
@@ -157,10 +189,15 @@ mkdir -p raw_data
 | `GTF_FILE` | 02 | (GENCODE v44 パス) | GTF アノテーションファイル |
 | `SJDB_OVERHANG` | 02 | 149 | リード長 - 1（150bp リードの場合は 149） |
 | `STRANDEDNESS` | 02 | 0 | featureCounts の strandedness (0=unstranded) |
-| `LFC_THRESHOLD` | 03, 04 | 1.0 | log2FoldChange の閾値 |
-| `PADJ_THRESHOLD` | 03, 04 | 0.05 | 調整済 P 値の閾値 |
+| `LFC_THRESHOLD` | 03, 04, 05 | 1.0 | log2FoldChange の閾値 |
+| `PADJ_THRESHOLD` | 03, 04, 05 | 0.05 | 調整済 P 値の閾値 |
 | `MIN_COUNT_THRESHOLD` | 03 | 10 | 前フィルタリングの最小カウント数 |
 | `DEG_TOOL` | 03 | "deseq2" | DEG ツール選択 ("deseq2" or "edger") |
+| `ORGANISM` | 05 | "hsapiens" | g:Profiler 生物種 |
+| `GO_PVAL_THRESHOLD` | 05 | 0.05 | エンリッチメントP値閾値 |
+| `TOP_N_TERMS` | 05 | 20 | 可視化する上位term数 |
+| `JACCARD_THRESHOLD` | 05 | 0.3 | ネットワーク表示のJaccard係数閾値 |
+| `GSEA_PERMUTATIONS` | 05 | 1000 | GSEA permutation数 |
 
 ---
 
@@ -176,7 +213,9 @@ rnaseq_project/
 ├── 01_QC_and_Trimming.ipynb         ← Step 1-2: QC, トリミング
 ├── 02_Mapping_and_Counting.ipynb    ← Step 3-5: STAR, featureCounts
 ├── 03_DEG_Analysis.ipynb            ← Step 6: DEG 解析 (R カーネル)
+├── 03_DEG_Analysis.R                ← Step 6: RStudio代替スクリプト
 ├── 04_Visualization.ipynb           ← Step 7: 可視化
+├── 05_Functional_Analysis.ipynb    ← Step 8: 機能解析・ネットワーク
 │
 ├── raw_data/                        ← FASTQ ファイルを配置
 │   ├── Sample1_R1.fastq.gz
@@ -199,7 +238,14 @@ rnaseq_project/
     ├── all_deg_results.csv          ← 全比較統合
     ├── pca_plot.pdf
     ├── volcano_plot_interactive.html
-    └── deg_heatmap_interactive.html
+    ├── deg_heatmap_interactive.html
+    └── functional/                  ← 機能解析結果
+        ├── go_*_Up.csv / go_*_Down.csv
+        ├── gsea_*.csv
+        ├── go_dotplot_interactive.html
+        ├── gsea_nes_barplot_interactive.html
+        ├── network_*_interactive.html
+        └── enrichment_heatmap_interactive.html
 ```
 
 ---
@@ -217,6 +263,17 @@ rnaseq_project/
 - **赤** = 増加, **グレー** = 変化なし, **青** = 減少
 - 遺伝子方向に Ward 法でクラスタリング済み
 - マウスホバーで遺伝子名・比較条件・log2FC・DEG ステータスを表示
+
+### エンリッチメントネットワーク (network_*_interactive.html)
+- Cytoscape の EnrichmentMap に相当するネットワーク可視化
+- **ノードサイズ** = ヒット遺伝子数、**ノード色** = -log10(p-value)
+- **エッジ太さ** = Jaccard 係数（term 間の遺伝子共有度）
+- マウスホバーで term 詳細（ソース、p 値、遺伝子数）を表示
+
+### エンリッチメントヒートマップ (enrichment_heatmap_interactive.html)
+- 全比較条件にわたる GO:BP term の -log10(p) を一覧表示
+- 条件間で共通 / 固有のパスウェイ変動を把握可能
+- Ward 法でクラスタリング済み
 
 ---
 
@@ -247,6 +304,10 @@ Jupyter を再起動してください。
 pip install jupyterlab-plotly
 ```
 
+### g:Profiler API でエラーが出る (ノートブック05)
+インターネット接続を確認してください。プロキシ環境では `HTTPS_PROXY` 環境変数の設定が必要な場合があります。
+g:Profiler サーバーがダウンしている場合は時間を置いて再実行してください。
+
 ### MultiQC でエラーが出る
 ```bash
 pip install --upgrade multiqc
@@ -266,3 +327,6 @@ pip install --upgrade multiqc
 | DESeq2 | Bioconductor | DEG 解析 |
 | edgeR | Bioconductor | DEG 解析 |
 | Plotly | 5.18.0 | インタラクティブ可視化 |
+| gprofiler-official | 1.0+ (BSD) | GO/パスウェイエンリッチメント |
+| gseapy | 1.1+ (BSD-3) | Pre-ranked GSEA |
+| networkx | 3.2+ (BSD-3) | ネットワーク可視化 |
