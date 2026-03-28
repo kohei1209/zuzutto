@@ -1,7 +1,10 @@
 sample_id,fastq_r1,fastq_r2,condition,replicate
-Sample1,raw_data/Sample1_R1.fastq.gz,raw_data/Sample1_R2.fastq.gz,Control,1
-Sample2,raw_data/Sample2_R1.fastq.gz,raw_data/Sample2_R2.fastq.gz,Control,2
-Sample3,raw_data/Sample3_R1.fastq.gz,raw_data/Sample3_R2.fastq.gz,Control,3
-Sample4,raw_data/Sample4_R1.fastq.gz,raw_data/Sample4_R2.fastq.gz,Treatment,1
-Sample5,raw_data/Sample5_R1.fastq.gz,raw_data/Sample5_R2.fastq.gz,Treatment,2
-Sample6,raw_data/Sample6_R1.fastq.gz,raw_data/Sample6_R2.fastq.gz,Treatment,3
+Sample1,raw_data/Sample1_R1.fastq.gz,raw_data/Sample1_R2.fastq.gz,DMSO,1
+Sample2,raw_data/Sample2_R1.fastq.gz,raw_data/Sample2_R2.fastq.gz,DMSO,2
+Sample3,raw_data/Sample3_R1.fastq.gz,raw_data/Sample3_R2.fastq.gz,DMSO,3
+Sample4,raw_data/Sample4_R1.fastq.gz,raw_data/Sample4_R2.fastq.gz,CompA_0.5nM,1
+Sample5,raw_data/Sample5_R1.fastq.gz,raw_data/Sample5_R2.fastq.gz,CompA_0.5nM,2
+Sample6,raw_data/Sample6_R1.fastq.gz,raw_data/Sample6_R2.fastq.gz,CompA_0.5nM,3
+Sample7,raw_data/Sample7_R1.fastq.gz,raw_data/Sample7_R2.fastq.gz,CompA_5nM,1
+Sample8,raw_data/Sample8_R1.fastq.gz,raw_data/Sample8_R2.fastq.gz,CompA_5nM,2
+Sample9,raw_data/Sample9_R1.fastq.gz,raw_data/Sample9_R2.fastq.gz,CompA_5nM,3

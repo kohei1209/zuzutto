@@ -60,8 +60,17 @@ cp sample_metadata_template.csv sample_metadata.csv
 | sample_id | ユニークなサンプル名 | Sample1 |
 | fastq_r1 | R1 FASTQファイルパス | raw_data/Sample1_R1.fastq.gz |
 | fastq_r2 | R2 FASTQファイルパス | raw_data/Sample1_R2.fastq.gz |
-| condition | 実験条件 | Control / Treatment |
+| condition | 実験条件 | DMSO, CompA_0.5nM, CompA_5nM |
 | replicate | レプリケート番号 | 1, 2, 3... |
+
+> **condition の命名ルール**  
+> - **スペース禁止** — アンダースコア `_` で区切ってください  
+> - 英数字・アンダースコア・ドットのみ使用可  
+> - 良い例: `DMSO`, `CompA_0.5nM`, `TGFb_10ng`  
+> - 悪い例: `compound A 0.5 nM`（スペースを含む）  
+>
+> 3条件以上の場合でも OK です。全ペアワイズ比較が自動実行されます  
+> （例: 3条件 → 3比較、4条件 → 6比較）
 
 ### 4. リファレンスゲノムの準備 (hg38)
 
