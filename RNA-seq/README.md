@@ -162,9 +162,10 @@ Rscript 03_DEG_Analysis.R
 
 ### 04_Visualization.ipynb
 - **Volcano Plot**: ドロップダウンで比較条件を切替可能（Plotly）
-- **全条件比較ヒートマップ**: 赤=増加 / グレー=変化なし / 青=減少
+- **サンプルレベル発現ヒートマップ**: 全サンプルの正規化発現量（Z-score）を表示。遺伝子・サンプル両軸でWard法クラスタリング。条件カラーバー付き
+- **ペアワイズ比較DEGステータスヒートマップ**: 赤=増加 / グレー=変化なし / 青=減少
 - DEG 数バープロット
-- 出力: `results/volcano_plot_interactive.html`, `results/deg_heatmap_interactive.html`
+- 出力: `results/volcano_plot_interactive.html`, `results/expression_heatmap_interactive.html`, `results/deg_heatmap_interactive.html`
 
 ### 05_Functional_Analysis.ipynb
 - **GO/パスウェイエンリッチメント**: g:Profiler (GO:BP/MF/CC, Reactome, WikiPathways)
@@ -238,6 +239,7 @@ rnaseq_project/
     ├── all_deg_results.csv          ← 全比較統合
     ├── pca_plot.pdf
     ├── volcano_plot_interactive.html
+    ├── expression_heatmap_interactive.html  ← サンプルレベル発現ヒートマップ
     ├── deg_heatmap_interactive.html
     └── functional/                  ← 機能解析結果
         ├── go_*_Up.csv / go_*_Down.csv
@@ -258,8 +260,16 @@ rnaseq_project/
 - マウスドラッグでズーム、ダブルクリックでリセット
 - 色: **赤** = Up (増加), **青** = Down (減少), **グレー** = NS (変化なし)
 
-### DEG ヒートマップ (deg_heatmap_interactive.html)
-- 全比較条件を一覧で表示
+### サンプルレベル発現ヒートマップ (expression_heatmap_interactive.html)
+- 全サンプルの正規化発現量（Z-score）を遺伝子×サンプルで表示
+- **遺伝子軸・サンプル軸の両方** で Ward 法による階層的クラスタリング済み
+- 上部の **条件カラーバー** でサンプルの実験条件を色分け表示
+- 特定のサンプル群で共通に変動する遺伝子クラスターを視覚的に把握可能
+- **赤** = 高発現（Z-score > 0）, **青** = 低発現（Z-score < 0）, **白** = 平均
+- マウスホバーで遺伝子名・サンプル名・条件・Z-score を表示
+
+### DEG ステータスヒートマップ (deg_heatmap_interactive.html)
+- 全ペアワイズ比較条件でのDEG判定結果を一覧で表示
 - **赤** = 増加, **グレー** = 変化なし, **青** = 減少
 - 遺伝子方向に Ward 法でクラスタリング済み
 - マウスホバーで遺伝子名・比較条件・log2FC・DEG ステータスを表示
