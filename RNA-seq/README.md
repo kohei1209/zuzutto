@@ -1,7 +1,7 @@
 # RNA-seq 解析パイプライン (Jupyter Notebook版)
 
 FASTQ 生データから DEG（発現変動遺伝子）のインタラクティブ可視化・機能解析までを
-**5つの Jupyter Notebook** で実行する RNA-seq 解析パイプラインです。
+**6つの Jupyter Notebook** で実行する RNA-seq 解析パイプラインです。
 
 ---
 
@@ -107,14 +107,16 @@ mkdir -p raw_data
 | 順番 | ファイル | カーネル | 内容 | 所要時間目安 |
 |:----:|---------|:-------:|------|:----------:|
 | 1 | `01_QC_and_Trimming.ipynb` | Python | FastQC → Trim Galore | 10〜30分 |
-| 2 | `02_Mapping_and_Counting.ipynb` | Python | STAR → featureCounts | 1〜3時間 |
+| 2 | `02_Mapping_and_Counting.ipynb` | Python | STAR → featureCounts → 遺伝子名マッピング | 1〜3時間 |
 | 3 | `03_DEG_Analysis.ipynb` | **R** | DESeq2 / edgeR | 5〜15分 |
 | 4 | `04_Visualization.ipynb` | Python | Volcano Plot, ヒートマップ | 1〜5分 |
 | 5 | `05_Functional_Analysis.ipynb` | Python | GO, GSEA, ネットワーク | 5〜15分 |
+| 6 | `06_nfcore_DifferentialAbundance.ipynb` | Python | nf-core パイプラインによる一括解析 | 30分〜2時間 |
 
 > **重要**: ノートブック03は **Rカーネル (RNA-seq (R))** に切り替えてから実行してください。
 > ノートブック04以降は Python に戻してください。
 > ノートブック05はインターネット接続が必要です（g:Profiler API使用）。
+> ノートブック06は Nextflow + Docker/Singularity が必要です（[詳細](#ノートブック06の追加要件nextflowdockersingularity)）。
 
 ### RStudio代替スクリプト（Step 3）
 
@@ -151,12 +153,14 @@ Rscript 03_DEG_Analysis.R
 ### 02_Mapping_and_Counting.ipynb
 - **STAR**: hg38 へのマッピング (Paired-end)
 - **featureCounts**: BAM → 遺伝子カウント行列
+- **遺伝子名マッピング**: GTFファイルから Ensembl ID → Gene Symbol (例: ENSG00000141510 → TP53) の変換テーブルを生成
 - マッピング統計のサマリー表示
-- 出力: `mapped/`, `results/count_matrix.csv`
+- 出力: `mapped/`, `results/count_matrix.csv`, `results/count_matrix_annotated.csv`, `results/gene_id_to_name.csv`
 
 ### 03_DEG_Analysis.ipynb (Rカーネル)
 - **DESeq2 / edgeR** から選択可能（冒頭の `DEG_TOOL` 変数で切替）
 - 全条件間のペアワイズ比較を自動実行
+- DEG結果に **遺伝子名 (gene_name)** を自動付与
 - PCA プロット / MDS プロット
 - 出力: `results/deg_*_vs_*.csv`, `results/all_deg_results.csv`
 
@@ -174,6 +178,95 @@ Rscript 03_DEG_Analysis.R
 - **全条件エンリッチメントヒートマップ**: 条件間のパスウェイ変動比較
 - 全ツール商用利用可 (KEGG は除外)
 - 出力: `results/functional/` 配下に CSV + インタラクティブ HTML
+
+### 06_nfcore_DifferentialAbundance.ipynb
+- **nf-core/differentialabundance** パイプライン（MIT ライセンス）による一括 DEG + 機能解析
+- 既存の `count_matrix.csv` と `sample_metadata.csv` を nf-core 入力フォーマットに自動変換
+- DESeq2 による差次的発現解析、PCA、ヒートマップ、Volcano Plot 等の HTML レポートを自動生成
+- カスタムパイプライン（03_DEG_Analysis）との結果比較機能
+- Nextflow + Docker/Singularity が必要（[詳細](#ノートブック06の追加要件nextflowdockersingularity)）
+- 出力: `results/nfcore_diffabund/` 配下に HTML レポート + DEG CSV
+
+---
+
+## 遺伝子名マッピング
+
+ノートブック02で GTF ファイルから **Ensembl ID → Gene Symbol** の変換テーブルを生成します。
+
+```
+ENSG00000141510 → TP53
+ENSG00000111640 → GAPDH
+```
+
+- 変換テーブルは `results/gene_id_to_name.csv` に保存
+- ノートブック03〜05の全ての解析・可視化で **遺伝子名 (Gene Symbol)** が自動的に表示されます
+- Ensembl ID のバージョン番号（例: `.18`）は自動的に除去されます
+
+---
+
+## QC レポートガイド
+
+FastQC の各評価項目について詳細な解説を `QC_report_guide.md` にまとめています。
+
+- 10項目（Basic Statistics、Per Base Sequence Quality、GC Content など）の評価基準
+- RNA-seq 特有の注意点（WARN/FAIL でも問題ない場合）
+- トリミング前後のチェックリスト
+- MultiQC でのまとめ確認ポイント
+
+QC 結果の判断に迷った場合はこのガイドを参照してください。
+
+---
+
+## ノートブック06の追加要件（Nextflow/Docker/Singularity）
+
+ノートブック06（nf-core/differentialabundance）を実行するには追加ツールが必要です。
+
+### Nextflow
+
+| 項目 | 内容 |
+|------|------|
+| ライセンス | Apache 2.0（商用利用OK、無料） |
+| インストール | `curl -s https://get.nextflow.io | bash`（管理者権限不要） |
+| 要件 | Java 11 以上 |
+
+```bash
+# インストール
+curl -s https://get.nextflow.io | bash
+chmod +x nextflow
+mv nextflow ~/bin/   # または PATH の通った場所へ
+```
+
+### コンテナランタイム（いずれか1つ）
+
+| ランタイム | ライセンス | 管理者権限 | 企業利用の推奨度 |
+|-----------|-----------|:---------:|:--------------:|
+| **Docker Engine** | Apache 2.0（無料） | **必要** | △ IT部門の承認が必要 |
+| **Docker Desktop** | **有料**（従業員250人以上 or 売上$10M以上の企業） | 必要 | × ライセンス費用あり |
+| **Singularity / Apptainer** | BSD-3（無料） | **不要** | **◎ 企業環境で推奨** |
+
+> **企業環境では Singularity/Apptainer を推奨します。**
+> - root 権限不要で実行可能
+> - 学術・企業の HPC 環境で標準的に採用されている
+> - nf-core パイプラインは公式サポート（`-profile singularity` で切替）
+
+```bash
+# Singularity の場合の実行例
+nextflow run nf-core/differentialabundance -profile singularity ...
+
+# Docker の場合
+nextflow run nf-core/differentialabundance -profile docker ...
+
+# Docker/Singularity が使えない場合は conda でも実行可能
+nextflow run nf-core/differentialabundance -profile conda ...
+```
+
+### セキュリティに関する注意
+
+- **Nextflow** 自体はワークフロー管理ツールであり、セキュリティリスクは低い
+- **Docker** はデーモンが root 権限で動作するため、社内ポリシーの確認が必要
+- **Singularity** はユーザー権限で動作し、セキュリティ面で優れている
+- いずれのツールも初回実行時にインターネットからコンテナイメージをダウンロードするため、**ネットワークアクセスが必要**
+- プロキシ環境では環境変数（`HTTP_PROXY`, `HTTPS_PROXY`）の設定が必要な場合がある
 
 ---
 
@@ -212,11 +305,13 @@ rnaseq_project/
 ├── sample_metadata.csv              ← ユーザーが編集
 │
 ├── 01_QC_and_Trimming.ipynb         ← Step 1-2: QC, トリミング
-├── 02_Mapping_and_Counting.ipynb    ← Step 3-5: STAR, featureCounts
+├── 02_Mapping_and_Counting.ipynb    ← Step 3-5: STAR, featureCounts, 遺伝子名マッピング
 ├── 03_DEG_Analysis.ipynb            ← Step 6: DEG 解析 (R カーネル)
 ├── 03_DEG_Analysis.R                ← Step 6: RStudio代替スクリプト
 ├── 04_Visualization.ipynb           ← Step 7: 可視化
-├── 05_Functional_Analysis.ipynb    ← Step 8: 機能解析・ネットワーク
+├── 05_Functional_Analysis.ipynb     ← Step 8: 機能解析・ネットワーク
+├── 06_nfcore_DifferentialAbundance.ipynb ← Step 9: nf-core 一括解析 (オプション)
+├── QC_report_guide.md               ← FastQC 各項目の評価解説
 │
 ├── raw_data/                        ← FASTQ ファイルを配置
 │   ├── Sample1_R1.fastq.gz
@@ -234,6 +329,8 @@ rnaseq_project/
 ├── mapped/                          ← (自動生成) BAM ファイル
 └── results/                         ← (自動生成) 解析結果
     ├── count_matrix.csv
+    ├── count_matrix_annotated.csv   ← 遺伝子名付きカウント行列
+    ├── gene_id_to_name.csv          ← Ensembl ID → Gene Symbol 変換テーブル
     ├── featureCounts_output.txt
     ├── deg_CondA_vs_CondB.csv       ← 各比較の DEG 結果
     ├── all_deg_results.csv          ← 全比較統合
@@ -248,6 +345,9 @@ rnaseq_project/
         ├── gsea_nes_barplot_interactive.html
         ├── network_*_interactive.html
         └── enrichment_heatmap_interactive.html
+    └── nfcore_diffabund/            ← (自動生成) nf-core パイプライン出力
+        ├── *.html                   ← 統合 HTML レポート
+        └── ...
 ```
 
 ---
@@ -323,6 +423,12 @@ g:Profiler サーバーがダウンしている場合は時間を置いて再実
 pip install --upgrade multiqc
 ```
 
+### Nextflow / Docker が社内PCにインストールできない (ノートブック06)
+- IT部門にインストール許可を確認してください
+- Docker の代わりに **Singularity/Apptainer**（root不要）を検討してください
+- どちらも使えない場合は `-profile conda` で実行可能です
+- 詳細は「[ノートブック06の追加要件](#ノートブック06の追加要件nextflowdockersingularity)」を参照
+
 ---
 
 ## 使用ツール / ライセンス
@@ -340,3 +446,5 @@ pip install --upgrade multiqc
 | gprofiler-official | 1.0+ (BSD) | GO/パスウェイエンリッチメント |
 | gseapy | 1.1+ (BSD-3) | Pre-ranked GSEA |
 | networkx | 3.2+ (BSD-3) | ネットワーク可視化 |
+| Nextflow | 23.10+ (Apache 2.0) | ワークフロー管理 (ノートブック06) |
+| nf-core/differentialabundance | latest (MIT) | DEG + 機能解析パイプライン (ノートブック06) |
