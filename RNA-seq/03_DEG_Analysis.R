@@ -214,14 +214,23 @@ vsd <- vst(dds_all, blind = TRUE)
 pca_data <- plotPCA(vsd, intgroup = "condition", returnData = TRUE)
 pv <- round(100 * attr(pca_data, "percentVar"))
 
-p <- ggplot(pca_data, aes(PC1, PC2, color = condition)) +
+# サンプル情報をPCAデータに結合（condition, replicate, sample_id）
+pca_data$sample_id <- rownames(pca_data)
+pca_data <- merge(pca_data, sample_info[, c("sample_id", "replicate")], by = "sample_id", all.x = TRUE)
+
+# ラベル: condition | replicate | sample_id
+pca_data$label <- paste0(pca_data$condition, " | Rep", pca_data$replicate, " | ", pca_data$sample_id)
+
+p <- ggplot(pca_data, aes(PC1, PC2, color = condition, label = label)) +
   geom_point(size = 4) +
+  geom_text(vjust = -0.8, hjust = 0.5, size = 3, show.legend = FALSE) +
   xlab(paste0("PC1: ", pv[1], "% variance")) +
   ylab(paste0("PC2: ", pv[2], "% variance")) +
   theme_minimal(base_size = 14) +
-  ggtitle("PCA - 全サンプル")
+  ggtitle("PCA - 全サンプル") +
+  theme(plot.margin = margin(10, 20, 10, 10))
 
-ggsave("results/pca_plot.pdf", p, width = 8, height = 6)
+ggsave("results/pca_plot.pdf", p, width = 10, height = 7)
 cat("出力: results/pca_plot.pdf\n")
 
 # ===========================
